@@ -6,6 +6,7 @@
 // so running it twice writes the same bytes both times. No network.
 //
 // Try it: mkdir -p out && MAKEFUN_OUTPUT_DIR=out node main.ts
+// The copy is byte-for-byte, so a second run writes identical bytes.
 
 import { copyFileSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
