@@ -1,101 +1,117 @@
-"""Draw the 21 November 2026 news image with Pillow (local build tool only).
+"""Build entry.png for the 21 November 2026 news image.
 
-The submitted program is main.ts, which only copies entry.png.
-This script is how entry.png was made, so the picture is reproducible
-from the same six verified stories. Run: python3 draw.py
+Runs locally with Pillow only. The entry program (main.ts) just copies
+the finished picture, so this script is the reproducible source of it.
+Usage: python3 draw.py
 """
 from PIL import Image, ImageDraw, ImageFont
 
-W, H = 1024, 1024
-PAPER = (247, 243, 232)
-INK = (20, 20, 20)
-RED = (178, 34, 34)
-BLUE = (24, 68, 128)
-GREEN = (34, 120, 70)
-GOLD = (176, 128, 20)
+PAGE_W, PAGE_H = 1024, 1024
+BG = (247, 243, 232)
+BLACK = (20, 20, 20)
+CRIMSON = (178, 34, 34)
+NAVY = (24, 68, 128)
+LEAF = (34, 120, 70)
+OCHRE = (176, 128, 20)
+GREY = (70, 70, 70)
+CARD_EDGE = (200, 190, 170)
 
-BOLD = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
-REG = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
-SERIF = "/usr/share/fonts/truetype/dejavu/DejaVuSerif-Bold.ttf"
+FONT_DIR = "/usr/share/fonts/truetype/dejavu/"
+SANS_BOLD = FONT_DIR + "DejaVuSans-Bold.ttf"
+SANS = FONT_DIR + "DejaVuSans.ttf"
+SERIF_BOLD = FONT_DIR + "DejaVuSerif-Bold.ttf"
 
 
-def font(path, size):
-    return ImageFont.truetype(path, size)
+def load_font(name, size):
+    return ImageFont.truetype(name, size)
 
 
-def wrap(draw, text, fnt, max_w):
-    words, lines, cur = text.split(), [], ""
-    for w in words:
-        trial = (cur + " " + w).strip()
-        if draw.textlength(trial, font=fnt) <= max_w:
-            cur = trial
+def split_lines(canvas, txt, fnt, width):
+    out, current = [], ""
+    for word in txt.split():
+        candidate = (current + " " + word).strip()
+        if canvas.textlength(candidate, font=fnt) <= width:
+            current = candidate
         else:
-            lines.append(cur)
-            cur = w
-    if cur:
-        lines.append(cur)
-    return lines
+            out.append(current)
+            current = word
+    if current:
+        out.append(current)
+    return out
 
 
-img = Image.new("RGB", (W, H), PAPER)
-d = ImageDraw.Draw(img)
-d.rectangle([0, 0, W, 10], fill=INK)
+def draw_panel(canvas, left, top, width, height, kicker, headline, body, accent):
+    canvas.rectangle([left, top, left + width, top + height],
+                     fill=(255, 255, 255), outline=CARD_EDGE, width=2)
+    canvas.rectangle([left, top, left + 10, top + height], fill=accent)
+    canvas.text((left + 26, top + 16), kicker,
+                font=load_font(SANS_BOLD, 19), fill=accent)
+    head_lines = split_lines(canvas, headline, load_font(SANS_BOLD, 27), width - 52)
+    cursor = top + 48
+    for row in head_lines[:3]:
+        canvas.text((left + 26, cursor), row, font=load_font(SANS_BOLD, 27), fill=BLACK)
+        cursor += 34
+    body_lines = split_lines(canvas, body, load_font(SANS, 20), width - 52)
+    for row in body_lines[:2]:
+        canvas.text((left + 26, cursor + 6), row, font=load_font(SANS, 20), fill=GREY)
+        cursor += 26
 
-# Header
-d.text((32, 28), "THE WORLD IN ONE DAY", font=font(BOLD, 26), fill=RED)
-d.text((32, 62), "SATURDAY 21 NOVEMBER 2026", font=font(SERIF, 54), fill=INK)
-d.rectangle([32, 138, 992, 144], fill=RED)
-d.text(
-    (32, 156),
-    "Tankers hit in Hormuz  •  Markets in correction",
-    font=font(BOLD, 24),
-    fill=INK,
-)
-d.text(
-    (32, 188),
-    "UK-EU reset  •  Cyberattacks  •  COP31 stalls",
-    font=font(BOLD, 24),
-    fill=INK,
-)
 
-stories = [
-    ("TANKERS HIT  •  STRAIT OF HORMUZ", "Two tankers hit by unknown projectiles near Oman",
-     "UK maritime agency reports strikes off Khasab; no casualties.", RED),
-    ("MARKETS FALL  •  NEW YORK", "S&P 500 enters correction as AI sell-off spreads",
-     "Nasdaq falls 5.3%; Nikkei down 5.1%; Nvidia drops 14%.", RED),
-    ("UK-EU RESET  •  BRUSSELS", "UK and EU sign three post-Brexit deals",
-     "Food trade, carbon markets, youth mobility for 100,000 a year.", BLUE),
-    ("CYBERATTACKS  •  WASHINGTON", "FBI probes breach of national crime database",
-     "Hackers also hit the USDA system that pays farmers.", INK),
-    ("COP31 STALLS  •  ANTALYA", "Climate talks run past deadline without a deal",
-     "Draft drops the promise to move away from fossil fuels.", GOLD),
-    ("CANCER HOPE  •  BARCELONA", "Pill makes pancreatic tumours vanish in 1 in 12",
-     "Daraxonrasib plus chemo shrank tumours in 60.7% of patients.", GREEN),
-]
+def main():
+    page = Image.new("RGB", (PAGE_W, PAGE_H), BG)
+    canvas = ImageDraw.Draw(page)
+    canvas.rectangle([0, 0, PAGE_W, 10], fill=BLACK)
 
-# Six panels: 2 columns x 3 rows
-x0, y0, pw, ph, gap = 32, 232, 474, 240, 12
-for i, (kicker, head, body, colour) in enumerate(stories):
-    x = x0 + (i % 2) * (pw + gap)
-    y = y0 + (i // 2) * (ph + gap)
-    d.rectangle([x, y, x + pw, y + ph], fill=(255, 255, 255),
-                outline=(200, 190, 170), width=2)
-    d.rectangle([x, y, x + 10, y + ph], fill=colour)
-    d.text((x + 26, y + 16), kicker, font=font(BOLD, 19), fill=colour)
-    lines = wrap(d, head, font(BOLD, 27), pw - 52)
-    yy = y + 48
-    for line in lines[:3]:
-        d.text((x + 26, yy), line, font=font(BOLD, 27), fill=INK)
-        yy += 34
-    blines = wrap(d, body, font(REG, 20), pw - 52)
-    for line in blines[:2]:
-        d.text((x + 26, yy + 6), line, font=font(REG, 20), fill=(70, 70, 70))
-        yy += 26
+    canvas.text((32, 28), "THE WORLD IN ONE DAY",
+                font=load_font(SANS_BOLD, 26), fill=CRIMSON)
+    canvas.text((32, 62), "SATURDAY 21 NOVEMBER 2026",
+                font=load_font(SERIF_BOLD, 54), fill=BLACK)
+    canvas.rectangle([32, 138, 992, 144], fill=CRIMSON)
+    canvas.text((32, 156), "Tankers hit in Hormuz  •  Markets in correction",
+                font=load_font(SANS_BOLD, 24), fill=BLACK)
+    canvas.text((32, 188), "UK-EU reset  •  Cyberattacks  •  COP31 stalls",
+                font=load_font(SANS_BOLD, 24), fill=BLACK)
 
-# Footer
-d.rectangle([32, 976, 992, 980], fill=INK)
-d.text((32, 988), "21 NOVEMBER 2026  —  SIX STORIES, ONE DAY",
-       font=font(BOLD, 20), fill=INK)
+    items = [
+        dict(kicker="TANKERS HIT  •  STRAIT OF HORMUZ",
+             headline="Two tankers hit by unknown projectiles near Oman",
+             body="UK maritime agency reports strikes off Khasab; no casualties.",
+             accent=CRIMSON),
+        dict(kicker="MARKETS FALL  •  NEW YORK",
+             headline="S&P 500 enters correction as AI sell-off spreads",
+             body="Nasdaq falls 5.3%; Nikkei down 5.1%; Nvidia drops 14%.",
+             accent=CRIMSON),
+        dict(kicker="UK-EU RESET  •  BRUSSELS",
+             headline="UK and EU sign three post-Brexit deals",
+             body="Food trade, carbon markets, youth mobility for 100,000 a year.",
+             accent=NAVY),
+        dict(kicker="CYBERATTACKS  •  WASHINGTON",
+             headline="FBI probes breach of national crime database",
+             body="Hackers also hit the USDA system that pays farmers.",
+             accent=BLACK),
+        dict(kicker="COP31 STALLS  •  ANTALYA",
+             headline="Climate talks run past deadline without a deal",
+             body="Draft drops the promise to move away from fossil fuels.",
+             accent=OCHRE),
+        dict(kicker="CANCER HOPE  •  BARCELONA",
+             headline="Pill makes pancreatic tumours vanish in 1 in 12",
+             body="Daraxonrasib plus chemo shrank tumours in 60.7% of patients.",
+             accent=LEAF),
+    ]
 
-img.save("entry.png", optimize=True)
-print("saved entry.png", img.size)
+    panel_w, panel_h, gap = 474, 240, 12
+    for idx, item in enumerate(items):
+        px = 32 + (idx % 2) * (panel_w + gap)
+        py = 232 + (idx // 2) * (panel_h + gap)
+        draw_panel(canvas, px, py, panel_w, panel_h,
+                   item["kicker"], item["headline"], item["body"], item["accent"])
+
+    canvas.rectangle([32, 976, 992, 980], fill=BLACK)
+    canvas.text((32, 988), "21 NOVEMBER 2026  —  SIX STORIES, ONE DAY",
+                font=load_font(SANS_BOLD, 20), fill=BLACK)
+    page.save("entry.png", optimize=True)
+    print("saved entry.png", page.size)
+
+
+if __name__ == "__main__":
+    main()

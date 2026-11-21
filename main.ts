@@ -1,15 +1,16 @@
-// News-image entry for 21 November 2026 (Node 22, standard library only).
-// Entry: six verified stories from Saturday 21 November 2026, drawn as a
-// newspaper front page. The picture lives in this repository as entry.png;
-// this program just copies it to the output path the grader expects, so
-// both runs of the program write exactly the same bytes. No network is used.
+// Entry for the 21 November 2026 news image, Node 22, stdlib only.
 //
-// Local test: mkdir -p out && MAKEFUN_OUTPUT_DIR=out node main.ts
+// The six stories from Saturday 21 November 2026 are drawn as a
+// newspaper front page in entry.png, which sits beside this file.
+// This program copies that picture to the grader's output folder,
+// so running it twice writes the same bytes both times. No network.
+//
+// Try it: mkdir -p out && MAKEFUN_OUTPUT_DIR=out node main.ts
 
 import { copyFileSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 
-const outDir = process.env.MAKEFUN_OUTPUT_DIR ?? "/output";
-mkdirSync(outDir, { recursive: true });
-const source = new URL("./entry.png", import.meta.url);
-copyFileSync(source, join(outDir, "entry.png"));
+const targetDir = process.env.MAKEFUN_OUTPUT_DIR ?? "/output";
+mkdirSync(targetDir, { recursive: true });
+const picture = new URL("./entry.png", import.meta.url);
+copyFileSync(picture, join(targetDir, "entry.png"));
